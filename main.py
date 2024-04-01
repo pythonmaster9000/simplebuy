@@ -32,9 +32,10 @@ our_keypair = Keypair.from_bytes(base58.b58decode(private_key))
 
 def buy(coin_address: str, sol_amount: float):
     swapper = raydium.RaySwap(client, coin_address, sol_amount, our_keypair)
-    while res := swapper.buy():
-        if res:
-            return res
+    while True:
+        result = swapper.buy()
+        if result:
+            return result
 
 
 def sell(coin_address: str):

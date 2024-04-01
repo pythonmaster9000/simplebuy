@@ -586,13 +586,12 @@ def get_shitcoin_price(client, shitcoin_address):
     else:
         pool_keys = fetch_pool_keys_personal(str(mint))
         fc[shitcoin_address] = pool_keys
-    # print('OUREKYS', pool_keys)
     base_info = client.get_multiple_accounts_json_parsed([pool_keys['base_vault'], pool_keys['quote_vault']])
     base_i = base_info.value[0]
     quote_i = base_info.value[1]
     flipped = quote_i.data.parsed['info']['mint'] != 'So11111111111111111111111111111111111111112'
-    base_amt = int(base_i.data.parsed['info']['tokenAmount']['amount'])
-    quote_amt = int(quote_i.data.parsed['info']['tokenAmount']['amount'])
+    base_amt = int(base_i.data.parsed['info']['tokenAmount']['amount']) # 50
+    quote_amt = int(quote_i.data.parsed['info']['tokenAmount']['amount']) # 100
     to_decimal = base_i.data.parsed['info']['tokenAmount']['decimals']
     decimal_shifter = 10 ** to_decimal
     new_price = (quote_amt / base_amt) / (10 ** (9 - to_decimal))
