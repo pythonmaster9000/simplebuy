@@ -7,7 +7,6 @@ import base58
 import time
 
 lamps = 1000000000
-import time
 
 rpc = "https://raydium-raydium-5ad5.mainnet.rpcpool.com/"
 rpc_headers = {'authority': 'raydium-raydium-5ad5.mainnet.rpcpool.com', 'accept': '*/*',
@@ -72,5 +71,3 @@ if __name__ == "__main__":
             print(res_price[0], 'price per token')
             real_balance = res_bal / res_price[1]
             print('token value', real_balance * res_price[0])
-
-

@@ -46,7 +46,6 @@ class RaySwap:
             False, balance_needed, Commitment("confirmed"))
         swap_tx.add(set_compute_unit_price(int(0.00025 * 10 ** 9)))
         shitcoin_price, decimal_shifter = solutils.get_shitcoin_price(self.client, self.coin_address)
-        # print("WE GOT IT", shitcoin_price)
         amount_we_want_to_buy = (self.amount_sol / shitcoin_price) * 0.95  # 5% slippage
         instructions_swap = solutils.make_swap_instruction(amount_in,
                                                            wrapped_sol_token_account,

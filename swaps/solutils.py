@@ -159,7 +159,7 @@ def parse_market_state_layout_v3(data):
         "blob_1" / Bytes(5),
         "account_flags" / Bytes(8),  # Assuming accountFlagsLayout('accountFlags') is 8 bytes
         "own_address" / Bytes(32),  # Assuming publicKey('ownAddress') is 32 bytes
-        "vault_signer_nonce" / Int64ul,
+        "vault_signer_nonce" / Int64ul, # TODO this is the real nonce??
         "base_mint" / Bytes(32),  # Assuming publicKey('baseMint') is 32 bytes <<<<< This is usually 53 bytes in
         "quote_mint" / Bytes(32),  # Assuming publicKey('quoteMint') is 32 bytes <<<< when flipped its 32 more
         "base_vault" / Bytes(32),  # Assuming publicKey('baseVault') is 32 bytes
@@ -285,6 +285,7 @@ def fetch_pool_keys_personal(mint: str, get_all_pools=False):
         print('uh oh')
         return
     minfo3 = get_market_info3(market_id)
+    nonce_2 = minfo3.get('vault_signer_nonce')
     if mint in upack_cache:
         parmin = upack_cache[mint]
     else:
@@ -314,7 +315,8 @@ def fetch_pool_keys_personal(mint: str, get_all_pools=False):
         market_authority = mc[mint]
     else:
         # market_authority = get_associated_authority(ser_programid, market_id)
-        market_authority = get_associated_authority(ser_programid, market_id, nonce)
+        # market_authority = get_associated_authority(ser_programid, market_id, nonce)
+        market_authority = get_associated_authority(ser_programid, market_id, nonce_2)
         mc[mint] = market_authority
     # print('market auth', market_authority)
     construct = {
