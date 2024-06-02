@@ -68,12 +68,13 @@ class RaySwap:
             try:
                 txn = self.client.send_transaction(swap_tx, payer, wrapped_sol_account_keypair)
             except Exception as e:
-                #print('also bad', e)
+                print('also bad', e)
                 return False
             self.purchase_price = shitcoin_price
+            print(txn, 'successssss')
             return txn.value
         except solana.rpc.core.RPCException:
-            #print('bad')
+            print('bad')
             return False
 
     def sell(self, half: bool = False, previous_balance: float = float('inf')) -> bool:
@@ -179,5 +180,8 @@ class RaySwap:
             return 0.0
 
     def check_price(self):
+        print('getting shitcoin price')
         shitcoin_price, decimal_shifter = solutils.get_shitcoin_price(self.client, self.coin_address)
+        print('price', shitcoin_price)
+        return ''
         return shitcoin_price, decimal_shifter

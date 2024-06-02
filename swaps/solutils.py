@@ -152,6 +152,7 @@ def get_aid(program_id, market_id):
     # )
     return res
 
+
 def parse_market_state_layout_v3(data):
     # Define the struct format
     # THIS IS THE STRUCTURE INSIDE OPENBOOK??
@@ -159,7 +160,7 @@ def parse_market_state_layout_v3(data):
         "blob_1" / Bytes(5),
         "account_flags" / Bytes(8),  # Assuming accountFlagsLayout('accountFlags') is 8 bytes
         "own_address" / Bytes(32),  # Assuming publicKey('ownAddress') is 32 bytes
-        "vault_signer_nonce" / Int64ul, # TODO this is the real nonce??
+        "vault_signer_nonce" / Int64ul,  # TODO this is the real nonce??
         "base_mint" / Bytes(32),  # Assuming publicKey('baseMint') is 32 bytes <<<<< This is usually 53 bytes in
         "quote_mint" / Bytes(32),  # Assuming publicKey('quoteMint') is 32 bytes <<<< when flipped its 32 more
         "base_vault" / Bytes(32),  # Assuming publicKey('baseVault') is 32 bytes
@@ -208,11 +209,34 @@ def parse_market_state_layout_v3(data):
     return pool
 
 
+test = {"id": "FRhB8L7Y9Qq41qZXYLtC2nw8An1RJfLLxRF2x9RwLLMo",
+        "baseMint": "7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr",
+        "quoteMint": "So11111111111111111111111111111111111111112",
+        "lpMint": "mUVPGfAcfQH3RA8EucVvrisxxyRu6WomPbPZdZUnrd9", "baseDecimals": 9, "quoteDecimals": 9, "lpDecimals": 9,
+        "version": 4, "programId": "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8",
+        "authority": "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1",
+        "openOrders": "4ShRqC2n3PURN7EiqmB8X4WLR81pQPvGLTPjL9X8SNQp",
+        "targetOrders": "9Rz3uVwambJRhCJoJH2qBPGgkr1CWUfWfQymsax1ZMKN",
+        "baseVault": "4Vc6N76UBu26c3jJDKBAbvSD7zPLuQWStBk7QgVEoeoS",
+        "quoteVault": "n6CwMY77wdEftf2VF6uPvbusYoraYUci3nYBPqH1DJ5",
+        "withdrawQueue": "11111111111111111111111111111111", "lpVault": "11111111111111111111111111111111",
+        "marketVersion": 4, "marketProgramId": "srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX",
+        "marketId": "92R9ZDC7buk2gQ8kHVynnSAxKjHYGUippr9QUdZ759iF",
+        "marketAuthority": "8Ym59BRuBt44GnhkQyYQPssGfY3kX4kFaHSs33PwMXbB",
+        "marketBaseVault": "EBvGGuPyK4oxKpax2MNASQsRWfGoVJh4t1JJw8fuVcy3",
+        "marketQuoteVault": "DRJdNZ8b8CHrq3xwTSofbhmbXFneZTQrPTgFGddJ6cDf",
+        "marketBids": "Cg5SE2g3WRvXN2RfGoy1DwZxqeS96EVWT7L2aCisJv44",
+        "marketAsks": "5txxTo3cBYytAo97Ca9hCT3zJCxv9knHXqNP9W2xEJkN",
+        "marketEventQueue": "HJUAR8MELHWJTsz72mbEpxcre83YBx61h2hsqKgvG59R",
+        "lookupTableAccount": "2LNsFM7KjT3PC4ZFQBu4DMZk2n5FewoJM5bPzMnSp5wP"}
+
+
 def get_liquid4(pool_address):
     endpoint = 'https://api.mainnet-beta.solana.com'
     solana_client = Client(endpoint)
     pool = Pubkey.from_string(pool_address)
     info = json.loads(solana_client.get_account_info_json_parsed(pool).to_json())
+    # print(info, pool)
     data = info['result']['value']['data']
     data_64 = base64.b64decode(data[0])
     token_account_data = parse_liquidity_state_layout_v4(data_64)
@@ -269,7 +293,47 @@ def locally_match_pools(mint):
 
 upack_cache = {}
 
+"""
+def get_pool(token_mint: str):
 
+    client = Client(RAYDIUM_RPC_URL, extra_headers=RAYDIUM_HEADERS)
+    market_id = client.get_program_accounts(Pubkey.from_string("srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX"), filters=[388, MemcmpOpts(53, token_mint)], data_slice=DataSliceOpts(offset=53, length=64))
+    market_id = market_id.value[0].pubkey
+
+    pool_id = get_amm_id(market_id)
+
+    raw_pool_data, raw_market_data = client.get_multiple_accounts([pool_id, market_id]).value
+    market_data = raw_market_data.data
+    pool_data = raw_pool_data.data
+
+    market_info = MARKET_STATE_LAYOUT_V3.parse(market_data)
+    pool_open_time = AMM_INFO_LAYOUT_V4.parse(pool_data)['poolOpenTime']
+
+    base_vault = get_base_vault(market_id)
+    quote_vault = get_quote_vault(market_id)
+    open_order = get_open_order(market_id)
+    target_order = get_target_order(market_id)
+
+    amm_keys = dict()
+    amm_keys["vault_nonce"] = market_info.vaultSignerNonce
+    amm_keys["marketBaseVault"] = str(Pubkey.from_bytes(market_info.baseVault))
+    amm_keys["marketQuoteVault"] = str(Pubkey.from_bytes(market_info.quoteVault))
+    amm_keys["marketBids"] = str(Pubkey.from_bytes(market_info.bids))
+    amm_keys["marketAsks"] = str(Pubkey.from_bytes(market_info.asks))
+    amm_keys["marketEventQueue"] = str(Pubkey.from_bytes(market_info.eventQueue))
+    amm_keys["pool_open_time"] = pool_open_time
+    amm_keys["id"] = str(pool_id)
+    amm_keys["marketId"] = str(market_id)
+    amm_keys["baseVault"] = str(base_vault)
+    amm_keys["quoteVault"] = str(quote_vault)
+    amm_keys["openOrders"] = str(open_order)
+    amm_keys["targetOrders"] = str(target_order)
+    amm_keys["marketAuthority"] = str(get_market_authority(str(market_id), amm_keys['vault_nonce']))
+    del amm_keys['vault_nonce']
+
+    return amm_keys
+
+"""
 def fetch_pool_keys_personal(mint: str, get_all_pools=False):
     # Match up the mint with the info we got in the pools on chain monitor
     # pool = locally_match_pools(mint)
@@ -339,7 +403,8 @@ def fetch_pool_keys_personal(mint: str, get_all_pools=False):
         'asks': parmin['asks'],
         'event_queue': parmin['event_queue']
     }
-    # print(construct, 'SHOULD BE CORRECT NOW THIS IS AIDS')
+    # print(construct)
+    # exit()
     return construct
 
 
@@ -525,56 +590,10 @@ def get_market_id_from_mint(owner, mint):
     sm = mint
     mint = Pubkey.from_string(mint)
     ctx = Client(rpc, extra_headers=rpc_headers)
-    # ctx = Client(rpc)
-    # pga = ctx.get_program_accounts(owner, filters=[388, MemcmpOpts(53, sm)],
-    #                               data_slice=DataSliceOpts(offset=53, length=64))
-    # pga = ctx.get_program_accounts(owner, filters=[388, MemcmpOpts(53, sm)])
-    # TODO this being 388 size will give me all the data, which i can parse in marketstate3? and get the other keys
     pga = ctx.get_program_accounts(owner, filters=[MemcmpOpts(53, sm)])
-    # memcmp_opts = MemcmpOpts(offset=4, bytes="3Mc6vR")
-    # filters = [17, memcmp_opts]
-    # pga = ctx.get_program_accounts(mint)
-    # print(json.loads(pga.to_json()))
     if not json.loads(pga.to_json())['result']:
-        # print('flipped')
         pga = ctx.get_program_accounts(owner, filters=[MemcmpOpts(85, sm)])
-    # print(json.loads(pga.to_json())['result'][0]['pubkey'])
-    # try:
-    # print(json.loads(pga.to_json()))
     return json.loads(pga.to_json())['result'][0]['pubkey']
-    # except:
-    #    # its 85
-    #    print('flippeddd')
-    #    press = 53
-    #    while press < 10000:
-    #        print('ok nigga')
-    #        pga2 = ctx.get_program_accounts(owner, filters=[MemcmpOpts(press, sm)])
-    #        print('done nigga', press)
-    #        press += 1
-    #        print(json.loads(pga2.to_json()))
-    #        time.sleep(0.1)
-
-
-def gta(owner, mint):
-    rpc = "https://raydium-raydium-5ad5.mainnet.rpcpool.com/"
-    rpc_headers = {'authority': 'raydium-raydium-5ad5.mainnet.rpcpool.com', 'accept': '*/*',
-                   'accept-language': 'en-US,en;q=0.9', 'cache-control': 'no-cache',
-                   'content-type': 'application/json', 'dnt': '1', 'origin': 'https://raydium.io',
-                   'pragma': 'no-cache', 'referer': 'https://raydium.io/',
-                   'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-                   'sec-ch-ua-mobile': '?0', 'sec-ch-ua-platform': '"Windows"', 'sec-fetch-dest': 'empty',
-                   'sec-fetch-mode': 'cors', 'sec-fetch-site': 'cross-site',
-                   'solana-client': 'js/0.0.0-development',
-                   'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, '
-                                 'like Gecko) Chrome/120.0.0.0 Safari/537.36', }
-    owner = Pubkey.from_string(owner)
-    sm = mint
-    mint = Pubkey.from_string(mint)
-    ctx = Client(rpc, extra_headers=rpc_headers)
-    pga = ctx.get_program_accounts(owner, filters=[388, MemcmpOpts(53, sm)],
-                                   data_slice=DataSliceOpts(offset=53, length=64))
-    print(pga)
-    return
 
 
 fc = {}
@@ -592,8 +611,8 @@ def get_shitcoin_price(client, shitcoin_address):
     base_i = base_info.value[0]
     quote_i = base_info.value[1]
     flipped = quote_i.data.parsed['info']['mint'] != 'So11111111111111111111111111111111111111112'
-    base_amt = int(base_i.data.parsed['info']['tokenAmount']['amount']) # 50
-    quote_amt = int(quote_i.data.parsed['info']['tokenAmount']['amount']) # 100
+    base_amt = int(base_i.data.parsed['info']['tokenAmount']['amount'])  # 50
+    quote_amt = int(quote_i.data.parsed['info']['tokenAmount']['amount'])  # 100
     to_decimal = base_i.data.parsed['info']['tokenAmount']['decimals']
     decimal_shifter = 10 ** to_decimal
     new_price = (quote_amt / base_amt) / (10 ** (9 - to_decimal))

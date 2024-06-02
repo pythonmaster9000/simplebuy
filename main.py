@@ -8,17 +8,19 @@ import time
 
 lamps = 1000000000
 
-rpc = "https://raydium-raydium-5ad5.mainnet.rpcpool.com/"
-rpc_headers = {'authority': 'raydium-raydium-5ad5.mainnet.rpcpool.com', 'accept': '*/*',
-               'accept-language': 'en-US,en;q=0.9', 'cache-control': 'no-cache',
-               'content-type': 'application/json', 'dnt': '1', 'origin': 'https://raydium.io',
-               'pragma': 'no-cache', 'referer': 'https://raydium.io/',
-               'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-               'sec-ch-ua-mobile': '?0', 'sec-ch-ua-platform': '"Windows"', 'sec-fetch-dest': 'empty',
-               'sec-fetch-mode': 'cors', 'sec-fetch-site': 'cross-site',
-               'solana-client': 'js/0.0.0-development',
-               'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, '
-                             'like Gecko) Chrome/120.0.0.0 Safari/537.36', }
+#rpc = "https://raydium-raydium-5ad5.mainnet.rpcpool.com/"
+#rpc_headers = {'authority': 'raydium-raydium-5ad5.mainnet.rpcpool.com', 'accept': '*/*',
+#               'accept-language': 'en-US,en;q=0.9', 'cache-control': 'no-cache',
+#               'content-type': 'application/json', 'dnt': '1', 'origin': 'https://raydium.io',
+#               'pragma': 'no-cache', 'referer': 'https://raydium.io/',
+#               'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+#               'sec-ch-ua-mobile': '?0', 'sec-ch-ua-platform': '"Windows"', 'sec-fetch-dest': 'empty',
+#               'sec-fetch-mode': 'cors', 'sec-fetch-site': 'cross-site',
+#               'solana-client': 'js/0.0.0-development',
+#               'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, '
+#                             'like Gecko) Chrome/120.0.0.0 Safari/537.36', }
+rpc = 'https://basic.ligmanode.com/v1/c5a6c95d-ceec-46fa-a333-3ab7f01bd0be'
+rpc_headers = {}
 with open('config.json', 'r') as file:
     config = json.load(file)
     private_key = config.get('private_key', 'no private key')
@@ -33,6 +35,7 @@ def buy(coin_address: str, sol_amount: float):
     swapper = raydium.RaySwap(client, coin_address, sol_amount, our_keypair)
     while True:
         result = swapper.buy()
+        print(result)
         if result:
             return result
 
@@ -49,6 +52,7 @@ def check_balance(coin_address: str):
 
 def check_price(coin_address: str):
     swapper = raydium.RaySwap(client, coin_address, 0.0, our_keypair)
+    print('checking price')
     return swapper.check_price()
 
 
@@ -71,3 +75,7 @@ if __name__ == "__main__":
             print(res_price[0], 'price per token')
             real_balance = res_bal / res_price[1]
             print('token value', real_balance * res_price[0])
+        if res.lower() == 'cp':
+            coin = input('coin to check price ')
+            print(check_price(coin))
+
